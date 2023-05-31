@@ -37,6 +37,8 @@ motifs_parser.add_argument("-o", "--output", type=str, default="modisco_results.
 	help="The path to the output file.")
 motifs_parser.add_argument("-v", "--verbose", action="store_true", default=False,
 	help="Controls the amount of output from the code.")
+motifs_parser.add_argument("-f", "--filter_inputs", action="store_true", default=False,
+	help="Filter out input sequences with missing bases.")
 
 report_parser = subparsers.add_parser("report", help="Create a HTML report of the results.")
 report_parser.add_argument("-i", "--h5py", type=str, required=True,
@@ -124,6 +126,17 @@ if args.cmd == "motifs":
 	if sequences.shape[1] < args.window:
 		raise ValueError("Window ({}) cannot be ".format(args.window) +
 			"longer than the sequences".format(sequences.shape))
+	
+	complete_seqs = sequences.sum(axis=2).prod(axis=1).astype(bool) 
+	num_incomplete = sequences.shape[0] - complete_seqs.sum()
+	
+	if args.filter_inputs:
+		if num_incomplete > 0:
+			sequences = sequences[complete_seqs, :, :]
+			attributions = attributions[complete_seqs, :, :]
+			
+		print(f"Filtered out {num_incomplete} input sequences with missing bases")
+			
 
 	sequences = sequences.astype('float32')
 	attributions = attributions.astype('float32')
