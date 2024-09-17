@@ -43,8 +43,31 @@ def convert(old_filename, filename):
 				pattern_grp.create_dataset("hypothetical_contribs", data=hypothetical_contribs)
 				
 				seqlet_grp = pattern_grp.create_group("seqlets")
-				seqlet_grp.create_dataset("n_seqlets", 
-					data=np.array([len(old_pattern['seqlets_and_alnmts']['seqlets'])]))
+
+				n_seqlets = len(old_pattern['seqlets_and_alnmts']['seqlets'])
+				seqlet_grp.create_dataset("n_seqlets", data=np.array([n_seqlets]))
+
+				starts = np.zeros(n_seqlets, dtype=int)
+				ends = np.zeros(n_seqlets, dtype=int)
+				example_idxs = np.zeros(n_seqlets, dtype=int)
+				is_revcomps = np.zeros(n_seqlets, dtype=bool)
+				for i in range(n_seqlets):
+					x = old_pattern['seqlets_and_alnmts']['seqlets'][i]
+					
+					idx = int(x.decode('utf8').split(',')[0].split(':')[1])
+					start = int(x.decode('utf8').split(',')[1].split(':')[1])
+					end = int(x.decode('utf8').split(',')[2].split(':')[1])
+					rc = x.decode('utf8').split(',')[3].split(':')[1] == 'True'
+
+					starts[i] = start
+					ends[i] = end
+					example_idxs[i] = idx
+					is_revcomps[i] = rc
+
+				seqlet_grp.create_dataset("start", data=starts)
+				seqlet_grp.create_dataset("end", data=ends)
+				seqlet_grp.create_dataset("example_idx", data=example_idxs)
+				seqlet_grp.create_dataset("is_revcomp", data=is_revcomps)
 
 				if 'subcluster_to_subpattern' in old_pattern.keys():
 					old_subpatterns_grp = old_pattern['subcluster_to_subpattern']
@@ -84,9 +107,32 @@ def convert(old_filename, filename):
 				pattern_grp.create_dataset("hypothetical_contribs", data=hypothetical_contribs)
 
 				seqlet_grp = pattern_grp.create_group("seqlets")
-				seqlet_grp.create_dataset("n_seqlets", 
-					data=np.array([len(old_pattern['seqlets_and_alnmts']['seqlets'])]))
 
+				n_seqlets = len(old_pattern['seqlets_and_alnmts']['seqlets'])
+				seqlet_grp.create_dataset("n_seqlets", data=np.array([n_seqlets]))
+
+				starts = np.zeros(n_seqlets, dtype=int)
+				ends = np.zeros(n_seqlets, dtype=int)
+				example_idxs = np.zeros(n_seqlets, dtype=int)
+				is_revcomps = np.zeros(n_seqlets, dtype=bool)
+				for i in range(n_seqlets):
+					x = old_pattern['seqlets_and_alnmts']['seqlets'][i]
+					
+					idx = int(x.decode('utf8').split(',')[0].split(':')[1])
+					start = int(x.decode('utf8').split(',')[1].split(':')[1])
+					end = int(x.decode('utf8').split(',')[2].split(':')[1])
+					rc = x.decode('utf8').split(',')[3].split(':')[1] == 'True'
+
+					starts[i] = start
+					ends[i] = end
+					example_idxs[i] = idx
+					is_revcomps[i] = rc
+
+				seqlet_grp.create_dataset("start", data=starts)
+				seqlet_grp.create_dataset("end", data=ends)
+				seqlet_grp.create_dataset("example_idx", data=example_idxs)
+				seqlet_grp.create_dataset("is_revcomp", data=is_revcomps)
+				
 				if 'subcluster_to_subpattern' in old_pattern.keys():
 					old_subpatterns_grp = old_pattern['subcluster_to_subpattern']
 					for subpattern in old_subpatterns_grp['subcluster_names'][:]:
@@ -253,7 +299,7 @@ def write_bed_from_h5(modisco_results_filepath: os.PathLike, peaks_filepath: os.
 		# Filter here because each seqlet's `example_idx` is based on a list of
 		# just the target chrom(s).
 		peak_rows_filtered = util.filter_bed_rows_by_chrom(peak_rows,
-						     valid_chroms) if valid_chroms != '*' else peak_rows
+							 valid_chroms) if valid_chroms != '*' else peak_rows
 
 	with h5py.File(modisco_results_filepath, 'r') as grp:
 
@@ -363,7 +409,7 @@ def write_fasta_from_h5(modisco_results_filepath: os.PathLike, peaks_filepath: o
 		# Filter here because each seqlet's `example_idx` is based on a list of
 		# just the target chrom(s).
 		peak_rows_filtered = util.filter_bed_rows_by_chrom(peak_rows,
-						     valid_chroms) if valid_chroms != '*' else peak_rows
+							 valid_chroms) if valid_chroms != '*' else peak_rows
 
 	sequences = np.load(sequences_file)
 
@@ -466,9 +512,9 @@ def convert_new_to_old(new_format_filename, old_format_filename):
 	old_f.create_dataset("task_names", data=["task0"])
 
 	old_fmt_grp = old_f.create_group('metacluster_idx_to_submetacluster_results')
-    
+	
 	patterns_group_name_to_metacluster_name = {"pos_patterns" : 'metacluster_0', "neg_patterns" : 'metacluster_1'}
-    
+	
 	for patterns_group_name in ['pos_patterns', 'neg_patterns']:
 		if patterns_group_name in new_f.keys():
 			metacluster_name = patterns_group_name_to_metacluster_name[patterns_group_name]
@@ -564,7 +610,7 @@ def convert_new_to_old(new_format_filename, old_format_filename):
 							old_seq_align_grp.create_dataset('alnmts', data=np.zeros((len(seqlet_strings),)), dtype="i")
 
 						old_subpatterns_grp.create_dataset("subcluster_names", data=subcluster_names)
-                    
+					
 				old_patterns_subgrp.create_dataset("all_pattern_names", data=pattern_names)
 
 			# required to avoid error: a collection of seqlets for the entire metacluster
