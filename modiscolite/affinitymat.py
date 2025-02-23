@@ -2,6 +2,8 @@
 # Authors: Jacob Schreiber <jmschreiber91@gmail.com>
 # adapted from code written by Avanti Shrikumar 
 
+import time
+
 import sklearn
 import sklearn.manifold
 
@@ -68,6 +70,10 @@ def cosine_similarity_from_seqlets(seqlets, n_neighbors, sign, topn=20,
 	min_k=4, max_k=6, max_gap=15, max_len=15, max_entries=500, 
 	alphabet_size=4):
 
+	a = time.time()
+
+	# max_entries = 100
+
 	X_fwd = gapped_kmer._seqlet_to_gkmers(seqlets, topn, 
 		min_k, max_k, max_gap, max_len, max_entries, True, sign)
 
@@ -77,9 +83,17 @@ def cosine_similarity_from_seqlets(seqlets, n_neighbors, sign, topn=20,
 	X = sklearn.preprocessing.normalize(X_fwd, norm='l2', axis=1)
 	Y = sklearn.preprocessing.normalize(X_bwd, norm='l2', axis=1)
 
+	b = time.time()
+	print(f"Time to convert seqlets to gapped kmers: {b-a}")
+
+	a = time.time()
 	n, d = X.shape
 	k = min(n_neighbors+1, n)
-	return _sparse_mm_dot(X.data, X.indices, X.indptr, Y.data, Y.indices, Y.indptr, k)
+	out = _sparse_mm_dot(X.data, X.indices, X.indptr, Y.data, Y.indices, Y.indptr, k)
+	b = time.time()
+	print(f"Time to compute cosine similarity: {b-a}")
+
+	return out
 
 
 def jaccard_from_seqlets(seqlets, min_overlap, filter_seqlets=None, 

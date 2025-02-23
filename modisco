@@ -3,6 +3,7 @@
 # Author: Jacob Schreiber <jmschreiber91@gmail.com>, Ivy Raine <ivy.ember.raine@gmail.com>
 
 from typing import List, Literal, Union
+import time
 import h5py
 import hdf5plugin
 import argparse
@@ -157,6 +158,8 @@ def convert_arg_chroms_to_list(chroms: str) -> Union[List[str], Literal['*']]:
 args = parser.parse_args()
 
 if args.cmd == "motifs":
+	start_all = time.time()
+	a = time.time()
 	if args.h5py is not None:
 		# Load the scores
 		scores = h5py.File(args.h5py, 'r')
@@ -200,6 +203,8 @@ if args.cmd == "motifs":
 	sequences = sequences.astype('float32')
 	attributions = attributions.astype('float32')
 
+	b = time.time()
+	print(f"Time to load data: {b-a}")
 
 	pos_patterns, neg_patterns = modiscolite.tfmodisco.TFMoDISco(
 		hypothetical_contribs=attributions, 
@@ -213,8 +218,16 @@ if args.cmd == "motifs":
 		target_seqlet_fdr=0.05,
 		n_leiden_runs=args.n_leiden,
 		verbose=args.verbose)
+	
+	a = time.time()
 
 	modiscolite.io.save_hdf5(args.output, pos_patterns, neg_patterns, args.window)
+
+	b = time.time()
+	print(f"Time to save data: {b-a}")
+
+	end_all = time.time()
+	print(f"Total time: {end_all-start_all}")
 
 elif args.cmd == 'meme':
 	modiscolite.io.write_meme_from_h5(args.h5py, args.datatype, args.output, args.quiet)
